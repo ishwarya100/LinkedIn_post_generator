@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LinkedIn Post Generator LLM</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #0077b5 0%, #00a0dc 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            padding: 30px;
+        }
+
+        .controls {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .control-group select, .control-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .control-group select:focus, .control-group input:focus {
+            outline: none;
+            border-color: #0077b5;
+        }
+
+        .checkbox-group {
+            display: flex;
+            gap: 20px;
+            margin-top: 15px;
+        }
+
+        .checkbox-group label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            font-weight: normal;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+            margin-right: 8px;
+        }
+
+        .generate-btn {
+            background: linear-gradient(135deg, #0077b5 0%, #00a0dc 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+            font-weight: 600;
+        }
+
+        .generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,119,181,0.3);
+        }
+
+        .results {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        .post-output {
+            background: #fff;
+            border: 2px solid #e1e5e9;
+            border-radius: 15px;
+            padding: 25px;
+            min-height: 300px;
+        }
+
+        .post-content {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #333;
+            white-space: pre-wrap;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #0077b5;
+        }
+
+        .analytics {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+        }
+
+        .analytics h3 {
+            color: #0077b5;
+            margin-bottom: 15px;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid #e1e5e9;
+        }
+
+        .stat-item:last-child {
+            border-bottom: none;
+        }
+
+        .stat-label {
+            font-weight: 600;
+            color: #666;
+        }
+
+        .stat-value {
+            color: #0077b5;
+            font-weight: 600;
+        }
+
+        .copy-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 15px;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+
+        .copy-btn:hover {
+            background: #218838;
+        }
+
+        .examples {
+            margin-top: 30px;
+            padding: 25px;
+            background: #f8f9fa;
+            border-radius: 15px;
+        }
+
+        .examples h3 {
+            color: #0077b5;
+            margin-bottom: 20px;
+        }
+
+        .example-post {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border-left: 4px solid #28a745;
+        }
+
+        .example-theme {
+            font-weight: 600;
+            color: #0077b5;
+            margin-bottom: 10px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #0077b5;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .results {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .main-content {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>LinkedIn Post Generator LLM</h1>
+            <p>Generate professional, engaging LinkedIn posts with AI-powered content creation</p>
+        </div>
+
+        <div class="main-content">
+            <div class="controls">
+                <div class="control-group">
+                    <label for="theme">Select Theme:</label>
+                    <select id="theme">
+                        <option value="">Random Theme</option>
+                        <option value="career_growth">Career Growth</option>
+                        <option value="industry_insights">Industry Insights</option>
+                        <option value="learning_development">Learning & Development</option>
+                        <option value="team_collaboration">Team Collaboration</option>
+                        <option value="motivation_inspiration">Motivation & Inspiration</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label for="company">Company Name (Optional):</label>
+                    <input type="text" id="company" placeholder="e.g., TechCorp, Google, Microsoft">
+                </div>
+
+                <div class="control-group">
+                    <label for="industry">Industry (Optional):</label>
+                    <input type="text" id="industry" placeholder="e.g., Technology, Healthcare, Finance">
+                </div>
+
+                <div class="checkbox-group">
+                    <label>
+                        <input type="checkbox" id="hashtags" checked>
+                        Include Hashtags
+                    </label>
+                    <label>
+                        <input type="checkbox" id="engagement" checked>
+                        Include Engagement Questions
+                    </label>
+                </div>
+
+                <button class="generate-btn" onclick="generatePost()">Generate LinkedIn Post</button>
+            </div>
+
+            <div class="results" id="results" style="display: none;">
+                <div class="post-output">
+                    <h3>Generated Post:</h3>
+                    <div class="post-content" id="postContent"></div>
+                    <button class="copy-btn" onclick="copyPost()">Copy Post</button>
+                </div>
+                
+                <div class="analytics">
+                    <h3>Post Analytics</h3>
+                    <div id="analyticsContent"></div>
+                </div>
+            </div>
+
+            <div class="examples">
+                <h3>Sample Generated Posts</h3>
+                <div class="example-post">
+                    <div class="example-theme">Career Growth</div>
+                    <div>Today marks 1 year since joining my team! Growth happens when you step outside your comfort zone. Here's what this taught me: Communication is everything • Collaboration beats competition • Continuous learning is key
+
+What are your thoughts?
+
+#careergrowth #professionaldevelopment #leadership</div>
+                </div>
+                
+                <div class="example-post">
+                    <div class="example-theme">Industry Insights</div>
+                    <div>The tech industry is evolving rapidly. AI and automation are becoming integral to daily operations. From what I've seen, companies that adapt early tend to gain significant competitive advantages. What are your thoughts?
+
+#industrytrends #innovation #technology</div>
+                </div>
+                
+                <div class="example-post">
+                    <div class="example-theme">Learning & Development</div>
+                    <div>Just completed a course on machine learning fundamentals! The practical applications were eye-opening and immediately relevant to my work. Already implementing some of these strategies in my current projects. What are you learning lately?
+
+#continuouslearning #skilldevelopment #education</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // LinkedIn Post Generator LLM Implementation
+        class LinkedInPostGenerator {
+            constructor() {
+                this.themes = {
+                    'career_growth': {
+                        'templates': [
+                            "Today marks {milestone} in my career journey! {reflection} Key lessons learned: {lessons}",
+                            "Reflecting on {milestone} - {reflection} What I've discovered: {lessons}",
+                            "Excited to share that {milestone}! {reflection} Here's what this taught me: {lessons}"
+                        ],
+                        'milestones': [
+                            "6 months at my current role",
+                            "1 year since joining my team",
+                            "completing my first major project",
+                            "my promotion to a new position",
+                            "2 years of professional growth"
+                        ],
+                        'reflections': [
+                            "Growth happens when you step outside your comfort zone.",
+                            "Every challenge has been a learning opportunity.",
+                            "The journey has been filled with ups and downs, but incredibly rewarding.",
+                            "Looking back, I'm grateful for every experience that shaped me."
+                        ],
+                        'lessons': [
+                            "Communication is everything • Collaboration beats competition • Continuous learning is key",
+                            "Embrace feedback • Build strong relationships • Stay curious about new technologies",
+                            "Be patient with yourself • Ask questions when unsure • Celebrate small wins",
+                            "Adaptability is crucial • Network genuinely • Focus on adding value"
+                        ]
+                    },
+                    
+                    'industry_insights': {
+                        'templates': [
+                            "The {industry} industry is evolving rapidly. {trend_statement} {personal_take} What are your thoughts?",
+                            "Interesting trend I've noticed in {industry}: {trend_statement} {personal_take} Would love to hear your perspective!",
+                            "As someone working in {industry}, I've observed {trend_statement} {personal_take} How do you see this playing out?"
+                        ],
+                        'industries': [
+                            "tech", "healthcare", "finance", "e-commerce", "education", "manufacturing", "consulting"
+                        ],
+                        'trend_statements': [
+                            "Remote work is reshaping how we collaborate and innovate.",
+                            "AI and automation are becoming integral to daily operations.",
+                            "Data-driven decision making is now the standard, not the exception.",
+                            "Sustainability initiatives are driving major business transformations.",
+                            "Customer experience is becoming the ultimate differentiator."
+                        ],
+                        'personal_takes': [
+                            "In my experience, this shift requires both technical skills and emotional intelligence.",
+                            "I believe the key is finding the right balance between innovation and proven practices.",
+                            "From what I've seen, companies that adapt early tend to gain significant competitive advantages.",
+                            "This trend presents both challenges and exciting opportunities for professionals like us."
+                        ]
+                    },
+                    
+                    'learning_development': {
+                        'templates': [
+                            "Just completed {course_achievement}! {learning_insight} {application} #continuouslearning",
+                            "Invested time in {course_achievement} and here's what stood out: {learning_insight} {application}",
+                            "Finished {course_achievement} - {learning_insight} {application} What are you learning lately?"
+                        ],
+                        'course_achievements': [
+                            "a course on machine learning fundamentals",
+                            "a certification in project management",
+                            "a workshop on data visualization",
+                            "an online program in digital marketing",
+                            "a bootcamp on cloud computing",
+                            "a course on financial analysis"
+                        ],
+                        'learning_insights': [
+                            "The practical applications were eye-opening and immediately relevant to my work.",
+                            "What impressed me most was how the concepts connected to real-world scenarios.",
+                            "The hands-on approach really helped solidify the theoretical knowledge.",
+                            "The instructors did an excellent job of breaking down complex topics."
+                        ],
+                        'applications': [
+                            "Already implementing some of these strategies in my current projects.",
+                            "Excited to apply these skills to solve challenges I'm facing at work.",
+                            "Looking forward to sharing these insights with my team.",
+                            "Planning to use this knowledge to drive better results in my role."
+                        ]
+                    },
+                    
+                    'team_collaboration': {
+                        'templates': [
+                            "Proud of my team for {team_achievement}! {collaboration_insight} {gratitude} #teamwork",
+                            "Amazing what we can accomplish together - {team_achievement} {collaboration_insight} {gratitude}",
+                            "Team spotlight: {team_achievement} {collaboration_insight} {gratitude} Grateful to work with such talented people!"
+                        ],
+                        'team_achievements': [
+                            "delivering our project ahead of schedule",
+                            "successfully launching our new product feature",
+                            "achieving our quarterly goals",
+                            "completing a complex client presentation",
+                            "implementing a new process that improved efficiency"
+                        ],
+                        'collaboration_insights': [
+                            "This success wouldn't have been possible without everyone's unique contributions.",
+                            "When diverse perspectives come together, magic happens.",
+                            "Clear communication and shared goals made all the difference.",
+                            "Each team member brought something valuable to the table."
+                        ],
+                        'gratitudes': [
+                            "Thankful for colleagues who challenge me to grow every day.",
+                            "Appreciate working with people who are as passionate about excellence as I am.",
+                            "Lucky to be part of a team that values both results and relationships.",
+                            "Grateful for the trust and support from my teammates."
+                        ]
+                    },
+                    
+                    'motivation_inspiration': {
+                        'templates': [
+                            "Monday motivation: {motivational_thought} {personal_example} {call_to_action}",
+                            "Reminder for today: {motivational_thought} {personal_example} {call_to_action}",
+                            "Something that's been on my mind: {motivational_thought} {personal_example} {call_to_action}"
+                        ],
+                        'motivational_thoughts': [
+                            "Success isn't just about reaching the destination - it's about who you become on the journey.",
+                            "The best time to plant a tree was 20 years ago. The second best time is now.",
+                            "Progress over perfection, always.",
+                            "Every expert was once a beginner who refused to give up."
+                        ],
+                        'personal_examples': [
+                            "I've learned this firsthand through my own career transitions.",
+                            "This principle has guided me through both successes and setbacks.",
+                            "Something I remind myself of whenever I face a new challenge.",
+                            "A mindset that has served me well in my professional journey."
+                        ],
+                        'call_to_actions': [
+                            "What's one small step you can take today toward your goals?",
+                            "How are you investing in your growth this week?",
+                            "What's keeping you motivated right now?",
+                            "What would you tell your younger self about pursuing your dreams?"
+                        ]
+                    }
+                };
+                
+                this.engagement_boosters = [
+                    "What's your experience with this?",
+                    "I'd love to hear your thoughts!",
+                    "What would you add to this list?",
+                    "How do you approach this challenge?",
+                    "What's been your biggest learning recently?",
+                    "Anyone else experiencing something similar?"
+                ];
+                
+                this.hashtags = {
+                    'career_growth': ['#careergrowth', '#professionaldevelopment', '#leadership', '#careeradvice'],
+                    'industry_insights': ['#industrytrends', '#innovation', '#business', '#technology'],
+                    'learning_development': ['#continuouslearning', '#skilldevelopment', '#education', '#growth'],
+                    'team_collaboration': ['#teamwork', '#collaboration', '#leadership', '#workplace'],
+                    'motivation_inspiration': ['#motivation', '#inspiration', '#mindset', '#success']
+                };
+            }
+            
+            generatePost(theme = null, includeHashtags = true, includeEngagement = true) {
+                // Select theme
+                if (!theme || !this.themes[theme]) {
+                    const themes = Object.keys(this.themes);
+                    theme = themes[Math.floor(Math.random() * themes.length)];
+                }
+                
+                const themeData = this.themes[theme];
+                
+                // Generate post content
+                let template = themeData.templates[Math.floor(Math.random() * themeData.templates.length)];
+                
+                // Fill in template variables
+                for (const [key, values] of Object.entries(themeData)) {
+                    if (key !== 'templates') {
+                        const placeholder = `{${key.replace(/s$/, '')}}`;
+                        if (template.includes(placeholder)) {
+                            template = template.replace(placeholder, values[Math.floor(Math.random() * values.length)]);
+                        }
+                    }
+                }
+                
+                // Add engagement booster
+                if (includeEngagement) {
+                    template += "\n\n" + this.engagement_boosters[Math.floor(Math.random() * this.engagement_boosters.length)];
+                }
+                
+                // Add hashtags
+                if (includeHashtags) {
+                    const selectedHashtags = this.hashtags[theme]
+                        .sort(() => 0.5 - Math.random())
+                        .slice(0, Math.floor(Math.random() * 3) + 2);
+                    template += "\n\n" + selectedHashtags.join(" ");
+                }
+                
+                return { content: template, theme: theme };
+            }
+            
+            customizePost(basePost, customizations) {
+                let customizedPost = basePost;
+                
+                if (customizations.company_name) {
+                    customizedPost = customizedPost.replace('my team', `my team at ${customizations.company_name}`);
+                    customizedPost = customizedPost.replace('my current role', `my role at ${customizations.company_name}`);
+                }
+                
+                if (customizations.industry) {
+                    customizedPost = customizedPost.replace('industry', `${customizations.industry} industry`);
+                }
+                
+                return customizedPost;
+            }
+            
+            getPostAnalytics(postContent) {
+                const words = postContent.split(/\s+/).filter(word => word.length > 0);
+                const sentences = postContent.split(/[.!?]+/).filter(s => s.trim().length > 0);
+                const hashtags = postContent.match(/#\w+/g) || [];
+                
+                return {
+                    word_count: words.length,
+                    character_count: postContent.length,
+                    sentence_count: sentences.length,
+                    hashtag_count: hashtags.length,
+                    hashtags: hashtags,
+                    estimated_read_time: `${Math.max(1, Math.ceil(words.length / 200))} min`,
+                    engagement_elements: {
+                        has_question: postContent.includes('?'),
+                        has_call_to_action: /what do you think|your thoughts|would love to hear/i.test(postContent),
+                        has_hashtags: hashtags.length > 0
+                    }
+                };
+            }
+        }
+        
+        // Initialize the generator
+        const llm = new LinkedInPostGenerator();
+        
+        function generatePost() {
+            const theme = document.getElementById('theme').value;
+            const company = document.getElementById('company').value;
+            const industry = document.getElementById('industry').value;
+            const includeHashtags = document.getElementById('hashtags').checked;
+            const includeEngagement = document.getElementById('engagement').checked;
+            
+            // Show loading
+            document.getElementById('results').style.display = 'block';
+            document.getElementById('postContent').innerHTML = '<div class="loading"><div class="spinner"></div>Generating your LinkedIn post...</div>';
+            document.getElementById('analyticsContent').innerHTML = '<div class="loading">Analyzing content...</div>';
+            
+            // Simulate processing time
+            setTimeout(() => {
+                // Generate post
+                const result = llm.generatePost(theme, includeHashtags, includeEngagement);
+                let postContent = result.content;
+                
+                // Apply customizations
+                const customizations = {};
+                if (company) customizations.company_name = company;
+                if (industry) customizations.industry = industry;
+                
+                if (Object.keys(customizations).length > 0) {
+                    postContent = llm.customizePost(postContent, customizations);
+                }
+                
+                // Display post
+                document.getElementById('postContent').textContent = postContent;
+                
+                // Generate and display analytics
+                const analytics = llm.getPostAnalytics(postContent);
+                const analyticsHtml = `
+                    <div class="stat-item">
+                        <span class="stat-label">Word Count:</span>
+                        <span class="stat-value">${analytics.word_count}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Character Count:</span>
+                        <span class="stat-value">${analytics.character_count}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Sentences:</span>
+                        <span class="stat-value">${analytics.sentence_count}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Hashtags:</span>
+                        <span class="stat-value">${analytics.hashtag_count}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Read Time:</span>
+                        <span class="stat-value">${analytics.estimated_read_time}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Theme:</span>
+                        <span class="stat-value">${result.theme.replace('_', ' ')}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Has Question:</span>
+                        <span class="stat-value">${analytics.engagement_elements.has_question ? 'Yes' : 'No'}</span>
+                    </div>
+                `;
+                
+                document.getElementById('analyticsContent').innerHTML = analyticsHtml;
+                
+                // Store current post for copying
+                window.currentPost = postContent;
+            }, 1500);
+        }
+        
+        function copyPost() {
+            if (window.currentPost) {
+                navigator.clipboard.writeText(window.currentPost).then(() => {
+                    const btn = document.querySelector('.copy-btn');
+                    const originalText = btn.textContent;
+                    btn.textContent = 'Copied!';
+                    btn.style.background = '#28a745';
+                    setTimeout(() => {
+                        btn.textContent = originalText;
+                        btn.style.background = '#28a745';
+                    }, 2000);
+                });
+            }
+        }
+        
+        // Generate a sample post on page load
+        window.onload = function() {
+            generatePost();
+        };
+    </script>
+</body>
+</html>
