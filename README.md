@@ -4,7 +4,9 @@ Write better LinkedIn posts effortlessly. Select a theme, personalize, and share
 
 #### 🐧 Psst... Click me!
 
-<img src="https://i.postimg.cc/SxN6n6vG/64185b4165d0b-funny-penguin-animated-gifs.gif" width="200" height="200" alt="Demo">
+<a href="https://ishwarya100.github.io/LinkedIn_post_generator/" target="_blank">
+  <img src="https://i.postimg.cc/SxN6n6vG/64185b4165d0b-funny-penguin-animated-gifs.gif" width="250" alt="Demo">
+</a>
 
 ### About
 I created **LinkedIn Post Generator** to make it easier for anyone to write LinkedIn posts without overthinking. It's a simple tool built using HTML, CSS, and JavaScript — no APIs, no GPT, just pure code.
